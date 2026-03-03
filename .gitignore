@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Generated gRPC stubs
+src/disaggregated/kvcache_pb2.py
+src/disaggregated/kvcache_pb2_grpc.py
+
+# Results (keep .gitkeep)
+results/*
+!results/.gitkeep
+
+# Models
+models/
+*.gguf
+
+# Monitoring data
+monitoring/data/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Env
+.env

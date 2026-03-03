@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package kvcache;
+
+service KVCacheService {
+  // Prefill node: run prefill, return KV state
+  rpc TransferKVCache(KVCacheRequest) returns (KVCacheResponse);
+
+  // Decode node: restore KV state, generate tokens (streaming)
+  rpc GenerateTokens(GenerateRequest) returns (stream TokenResponse);
+
+  // Health check
+  rpc HealthCheck(HealthRequest) returns (HealthResponse);
+}
+
+message KVCacheRequest {
+  bytes kv_state = 1;       // llama save_state() raw bytes
+  int32 n_past = 2;         // number of tokens already processed
+  string request_id = 3;
+  string model_id = 4;      // e.g. "llama-3.2-1b:q4_0"
+  double prefill_ttft_ms = 5; // TTFT measured on prefill node
+}
+
+message KVCacheResponse {
+  string request_id = 1;
+  bool success = 2;
+  string error = 3;
+}
+
+message GenerateRequest {
+  bytes kv_state = 1;
+  int32 n_past = 2;
+  string request_id = 3;
+  string model_id = 4;
+  int32 n_predict = 5;
+  double prefill_ttft_ms = 6;
+}
+
+message TokenResponse {
+  string request_id = 1;
+  string token = 2;
+  bool is_last = 3;
+  double tpot_ms = 4;        // time per output token for this token
+  int32 token_index = 5;
+  double total_decode_ms = 6; // cumulative decode time (set on last token)
+  int32 total_tokens = 7;     // set on last token
+}
+
+message HealthRequest {}
+
+message HealthResponse {
+  bool healthy = 1;
+  string model_id = 2;
+  int32 active_requests = 3;
+}

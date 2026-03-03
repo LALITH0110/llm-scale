@@ -1,0 +1,146 @@
+{
+  "title": "LLM-SCALE Experiment Dashboard",
+  "uid": "llmscale-main",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "5s",
+  "time": { "from": "now-30m", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Time to First Token (TTFT) — p50/p95/p99",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, rate(llmscale_ttft_ms_bucket[1m]))",
+          "legendFormat": "TTFT p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, rate(llmscale_ttft_ms_bucket[1m]))",
+          "legendFormat": "TTFT p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, rate(llmscale_ttft_ms_bucket[1m]))",
+          "legendFormat": "TTFT p99"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "ms", "color": { "mode": "palette-classic" } }
+      }
+    },
+    {
+      "id": 2,
+      "title": "Time Per Output Token (TPOT) — p50/p95",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, rate(llmscale_tpot_ms_bucket[1m]))",
+          "legendFormat": "TPOT p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, rate(llmscale_tpot_ms_bucket[1m]))",
+          "legendFormat": "TPOT p95"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "ms" }
+      }
+    },
+    {
+      "id": 3,
+      "title": "KV Cache Transfer Latency",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, rate(llmscale_kv_transfer_ms_bucket[1m]))",
+          "legendFormat": "KV transfer p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, rate(llmscale_kv_transfer_ms_bucket[1m]))",
+          "legendFormat": "KV transfer p95"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "ms", "color": { "fixedColor": "orange", "mode": "fixed" } }
+      }
+    },
+    {
+      "id": 4,
+      "title": "Decode Throughput (tokens/sec)",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, rate(llmscale_throughput_tps_bucket[1m]))",
+          "legendFormat": "Throughput p50"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps" }
+      }
+    },
+    {
+      "id": 5,
+      "title": "Request Rate",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 16, "w": 6, "h": 4 },
+      "targets": [
+        {
+          "expr": "rate(llmscale_requests_total[1m])",
+          "legendFormat": "req/s"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps" }
+      }
+    },
+    {
+      "id": 6,
+      "title": "Error Rate",
+      "type": "stat",
+      "gridPos": { "x": 6, "y": 16, "w": 6, "h": 4 },
+      "targets": [
+        {
+          "expr": "rate(llmscale_requests_total{status=\"error\"}[1m])",
+          "legendFormat": "errors/s"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "color": { "fixedColor": "red", "mode": "fixed" } }
+      }
+    },
+    {
+      "id": 7,
+      "title": "Node CPU Usage",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 20, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "100 - (avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[30s])) * 100)",
+          "legendFormat": "CPU% {{instance}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "percent", "min": 0, "max": 100 }
+      }
+    },
+    {
+      "id": 8,
+      "title": "Node Memory Bandwidth (est.)",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 20, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "rate(node_memory_MemFree_bytes[30s])",
+          "legendFormat": "Mem free rate {{instance}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "bytes" }
+      }
+    }
+  ]
+}

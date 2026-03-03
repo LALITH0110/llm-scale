@@ -1,0 +1,39 @@
+models:
+  - name: llama-3.2-1b
+    hf_repo: bartowski/Llama-3.2-1B-Instruct-GGUF
+    variants:
+      fp16: models/llama-3.2-1b-f16.gguf
+      q8_0: models/llama-3.2-1b-q8_0.gguf
+      q4_0: models/llama-3.2-1b-q4_0.gguf
+      q2_k: models/llama-3.2-1b-q2_k.gguf
+    hf_filenames:
+      fp16: Llama-3.2-1B-Instruct-f16.gguf
+      q8_0: Llama-3.2-1B-Instruct-Q8_0.gguf
+      q4_0: Llama-3.2-1B-Instruct-Q4_0.gguf
+      q2_k: Llama-3.2-1B-Instruct-Q2_K.gguf
+
+  - name: llama-3.2-3b
+    hf_repo: bartowski/Llama-3.2-3B-Instruct-GGUF
+    variants:
+      fp16: models/llama-3.2-3b-f16.gguf
+      q8_0: models/llama-3.2-3b-q8_0.gguf
+      q4_0: models/llama-3.2-3b-q4_0.gguf
+      q2_k: models/llama-3.2-3b-q2_k.gguf
+    hf_filenames:
+      fp16: Llama-3.2-3B-Instruct-f16.gguf
+      q8_0: Llama-3.2-3B-Instruct-Q8_0.gguf
+      q4_0: Llama-3.2-3B-Instruct-Q4_0.gguf
+      q2_k: Llama-3.2-3B-Instruct-Q2_K.gguf
+
+  - name: deepseek-7b
+    hf_repo: bartowski/deepseek-llm-7b-chat-GGUF
+    variants:
+      fp16: models/deepseek-7b-f16.gguf
+      q8_0: models/deepseek-7b-q8_0.gguf
+      q4_0: models/deepseek-7b-q4_0.gguf
+      q2_k: models/deepseek-7b-q2_k.gguf
+    hf_filenames:
+      fp16: deepseek-llm-7b-chat-f16.gguf
+      q8_0: deepseek-llm-7b-chat-Q8_0.gguf
+      q4_0: deepseek-llm-7b-chat-Q4_0.gguf
+      q2_k: deepseek-llm-7b-chat-Q2_K.gguf

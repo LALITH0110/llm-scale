@@ -1,0 +1,41 @@
+colocated:
+  # Adjust after checking Chameleon node specs
+  core_counts: [1, 2, 4, 8, 16, 32, 64, 128]
+  prompts:
+    short_128: "Explain what a transformer neural network is in simple terms."
+    medium_512: "Write a detailed technical explanation of how attention mechanisms work in large language models, covering the mathematical foundations, the role of queries, keys, and values, and why self-attention enables models to capture long-range dependencies in sequences."
+    long_2048: "You are a systems researcher studying distributed computing. Write a comprehensive survey covering: (1) the history of distributed systems from early mainframes to cloud computing, (2) fundamental challenges including consistency, availability, and partition tolerance as described by the CAP theorem, (3) consensus algorithms such as Paxos and Raft and their trade-offs, (4) modern distributed databases including Spanner, Cassandra, and DynamoDB, (5) the emergence of microservices architectures and service meshes, (6) containerization with Docker and orchestration with Kubernetes, (7) serverless computing paradigms, and (8) current research directions in distributed machine learning and federated learning. For each topic, provide concrete examples, discuss limitations, and explain how researchers have addressed key challenges."
+  n_predict: 128
+  n_ctx: 4096
+  repetitions: 3  # runs per config for variance estimation
+
+disaggregated:
+  pd_ratios:
+    - prefill: 1
+      decode: 1
+    - prefill: 1
+      decode: 2
+    - prefill: 2
+      decode: 1
+  prefill_port: 50051
+  decode_port_base: 50052  # decode nodes get 50052, 50053, ...
+  router_port: 8000
+
+hetero_quant:
+  # Exp 3: cross-quant combos (if load_state is quant-agnostic)
+  combos:
+    - prefill_quant: fp16
+      decode_quant: q4_0
+    - prefill_quant: fp16
+      decode_quant: q8_0
+    - prefill_quant: q8_0
+      decode_quant: q4_0
+    - prefill_quant: q4_0
+      decode_quant: q4_0  # baseline same-quant
+
+# Local dev overrides (used when LLMSCALE_ENV=local)
+local_overrides:
+  core_counts: [1, 2, 4, 8]
+  n_gpu_layers: -1  # Metal full offload
+  models: [llama-3.2-1b]
+  quants: [q4_0, q8_0]

@@ -1,0 +1,29 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+scrape_configs:
+  # LLM-SCALE router metrics
+  - job_name: 'llmscale_router'
+    static_configs:
+      - targets: ['localhost:8000']
+    metrics_path: '/metrics'
+
+  # Prometheus node exporter — all nodes
+  - job_name: 'node'
+    static_configs:
+      - targets:
+          - 'localhost:9100'
+          # Add Chameleon node IPs here, e.g.:
+          # - '10.0.0.2:9100'
+          # - '10.0.0.3:9100'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        regex: '([^:]+):.*'
+        replacement: '$1'
+
+  # Self-scrape Prometheus
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']

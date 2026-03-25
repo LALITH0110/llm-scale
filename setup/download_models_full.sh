@@ -6,8 +6,10 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MODELS_DIR="$REPO_ROOT/models"
 mkdir -p "$MODELS_DIR"
 
+export PATH="$HOME/.local/bin:$PATH"
+
 if ! command -v huggingface-cli &>/dev/null; then
-  pip install huggingface_hub[cli] -q
+  python3 -m pip install "huggingface_hub[cli]" -q
 fi
 
 echo "=== Downloading full model suite for Chameleon ==="

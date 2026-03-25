@@ -77,6 +77,9 @@ class DecodeServicer(kvcache_pb2_grpc.KVCacheServiceServicer):
                 seed=state_dict["seed"],
             )
             self.llm.load_state(llama_state)
+            # Re-eval last token to populate logits buffer (load_state doesn't)
+            last_token = state_dict["input_ids"][state_dict["n_tokens"] - 1]
+            self.llm.eval([int(last_token)])
             restore_ms = (time.perf_counter() - t_restore_start) * 1000.0
             log.info(f"[{req_id}] KV restored in {restore_ms:.1f}ms")
 

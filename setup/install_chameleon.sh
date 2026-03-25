@@ -66,9 +66,9 @@ python3 -m grpc_tools.protoc \
   --grpc_python_out="$REPO_ROOT/src/disaggregated" \
   "$REPO_ROOT/src/disaggregated/proto/kvcache.proto"
 
-# Fix relative imports
-sed -i 's/^import kvcache_pb2/from . import kvcache_pb2/' \
-  "$REPO_ROOT/src/disaggregated/kvcache_pb2_grpc.py" 2>/dev/null || true
+# Note: kvcache_pb2_grpc.py uses absolute imports (import kvcache_pb2)
+# because decode_server.py adds the directory to sys.path directly.
+# Do NOT convert to relative imports.
 
 echo ""
 echo "=== Setup complete ==="

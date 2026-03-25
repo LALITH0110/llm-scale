@@ -135,7 +135,17 @@ class RouterConfig:
             t0 = time.perf_counter()
             self._local_llm.eval(tokens)
             ttft_ms = (time.perf_counter() - t0) * 1000.0
-            kv_bytes = bytes(self._local_llm.save_state())
+            state = self._local_llm.save_state()
+            # Serialize full LlamaState for decode node
+            import pickle
+            kv_bytes = pickle.dumps({
+                "llama_state": bytes(state.llama_state),
+                "llama_state_size": state.llama_state_size,
+                "input_ids": state.input_ids,
+                "scores": state.scores,
+                "n_tokens": state.n_tokens,
+                "seed": state.seed,
+            })
             n_past = len(tokens)
             return kv_bytes, n_past, ttft_ms
         else:

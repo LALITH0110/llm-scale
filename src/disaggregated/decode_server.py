@@ -64,8 +64,19 @@ class DecodeServicer(kvcache_pb2_grpc.KVCacheServiceServicer):
 
         try:
             # Restore KV cache from prefill node
+            import pickle
+            from llama_cpp import LlamaState
             t_restore_start = time.perf_counter()
-            self.llm.load_state(request.kv_state)
+            state_dict = pickle.loads(request.kv_state)
+            llama_state = LlamaState(
+                input_ids=state_dict["input_ids"],
+                scores=state_dict["scores"],
+                n_tokens=state_dict["n_tokens"],
+                llama_state=state_dict["llama_state"],
+                llama_state_size=state_dict["llama_state_size"],
+                seed=state_dict["seed"],
+            )
+            self.llm.load_state(llama_state)
             restore_ms = (time.perf_counter() - t_restore_start) * 1000.0
             log.info(f"[{req_id}] KV restored in {restore_ms:.1f}ms")
 

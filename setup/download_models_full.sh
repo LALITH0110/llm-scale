@@ -8,9 +8,11 @@ mkdir -p "$MODELS_DIR"
 
 export PATH="$HOME/.local/bin:$PATH"
 
-if ! command -v huggingface-cli &>/dev/null; then
-  python3 -m pip install "huggingface_hub[cli]" -q
-fi
+# Ensure huggingface_hub is installed
+python3 -c "import huggingface_hub" 2>/dev/null || python3 -m pip install huggingface_hub -q
+
+# Use python3 -m to avoid PATH issues with huggingface-cli
+HF_CLI="python3 -m huggingface_hub.commands.huggingface_cli"
 
 echo "=== Downloading full model suite for Chameleon ==="
 echo "Warning: ~50-100GB of disk space required."
@@ -27,7 +29,7 @@ download_model() {
   fi
 
   echo "  Downloading $local_name from $repo..."
-  huggingface-cli download "$repo" "$hf_filename" \
+  $HF_CLI download "$repo" "$hf_filename" \
     --local-dir "$MODELS_DIR" \
     --local-dir-use-symlinks False
 

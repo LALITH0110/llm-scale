@@ -23,6 +23,9 @@ sudo apt-get install -y \
   wget \
   curl
 
+# Add local bin to PATH
+export PATH="$HOME/.local/bin:$PATH"
+
 # Upgrade pip and packaging to avoid scikit-build-core compat issues on Python 3.10
 echo "Upgrading pip and packaging..."
 python3 -m pip install --upgrade pip setuptools packaging wheel
@@ -57,7 +60,7 @@ python3 -m pip install -r "$REPO_ROOT/requirements.txt"
 
 # Generate gRPC stubs
 echo "Generating gRPC stubs..."
-python -m grpc_tools.protoc \
+python3 -m grpc_tools.protoc \
   -I "$REPO_ROOT/src/disaggregated/proto" \
   --python_out="$REPO_ROOT/src/disaggregated" \
   --grpc_python_out="$REPO_ROOT/src/disaggregated" \

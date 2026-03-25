@@ -6,13 +6,8 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MODELS_DIR="$REPO_ROOT/models"
 mkdir -p "$MODELS_DIR"
 
-export PATH="$HOME/.local/bin:$PATH"
-
 # Ensure huggingface_hub is installed
 python3 -c "import huggingface_hub" 2>/dev/null || python3 -m pip install huggingface_hub -q
-
-# Use python3 -m to avoid PATH issues with huggingface-cli
-HF_CLI="python3 -m huggingface_hub.commands.huggingface_cli"
 
 echo "=== Downloading full model suite for Chameleon ==="
 echo "Warning: ~50-100GB of disk space required."
@@ -29,14 +24,14 @@ download_model() {
   fi
 
   echo "  Downloading $local_name from $repo..."
-  $HF_CLI download "$repo" "$hf_filename" \
-    --local-dir "$MODELS_DIR" \
-    --local-dir-use-symlinks False
-
-  # Rename to our convention
-  if [ -f "$MODELS_DIR/$hf_filename" ] && [ "$hf_filename" != "$local_name" ]; then
-    mv "$MODELS_DIR/$hf_filename" "$MODELS_DIR/$local_name"
-  fi
+  python3 -c "
+from huggingface_hub import hf_hub_download
+import shutil, os
+path = hf_hub_download(repo_id='$repo', filename='$hf_filename')
+dest = os.path.join('$MODELS_DIR', '$local_name')
+shutil.copy2(path, dest)
+print(f'  Saved to {dest}')
+"
 }
 
 # Llama 3.2 1B

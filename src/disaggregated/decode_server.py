@@ -169,7 +169,14 @@ def serve(args):
         model_id=args.model_id,
     )
 
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=8))
+    MAX_MSG = 512 * 1024 * 1024  # 512MB for large KV caches
+    server = grpc.server(
+        futures.ThreadPoolExecutor(max_workers=8),
+        options=[
+            ("grpc.max_receive_message_length", MAX_MSG),
+            ("grpc.max_send_message_length", MAX_MSG),
+        ],
+    )
     kvcache_pb2_grpc.add_KVCacheServiceServicer_to_server(servicer, server)
     server.add_insecure_port(f"[::]:{args.port}")
     server.start()

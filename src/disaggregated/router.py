@@ -114,7 +114,11 @@ class RouterConfig:
         for i, host in enumerate(decode_hosts):
             port = decode_port_base + i
             addr = f"{host}:{port}"
-            ch = grpc.insecure_channel(addr)
+            MAX_MSG = 512 * 1024 * 1024  # 512MB for large KV caches
+            ch = grpc.insecure_channel(addr, options=[
+                ("grpc.max_receive_message_length", MAX_MSG),
+                ("grpc.max_send_message_length", MAX_MSG),
+            ])
             stub = kvcache_pb2_grpc.KVCacheServiceStub(ch)
             self._decode_channels.append(ch)
             self._decode_stubs.append(stub)

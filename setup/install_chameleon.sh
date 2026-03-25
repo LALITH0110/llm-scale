@@ -13,13 +13,19 @@ sudo apt-get install -y \
   numactl \
   libnuma-dev \
   linux-tools-common \
-  linux-tools-$(uname -r) \
+  linux-tools-"$(uname -r)" 2>/dev/null || true
+sudo apt-get install -y \
   cmake \
   build-essential \
   python3-pip \
   python3-dev \
+  python3-venv \
   wget \
   curl
+
+# Upgrade pip and packaging to avoid scikit-build-core compat issues on Python 3.10
+echo "Upgrading pip and packaging..."
+python3 -m pip install --upgrade pip setuptools packaging wheel
 
 # Prometheus node exporter
 PROM_VERSION="1.8.2"
@@ -43,11 +49,11 @@ fi
 # llama-cpp-python CPU-optimized
 echo "Installing llama-cpp-python (CPU, AVX2${AVX512_FLAG:+ + AVX512})..."
 CMAKE_ARGS="-DLLAMA_NATIVE=on -DLLAMA_AVX2=on ${AVX512_FLAG}" \
-  pip install llama-cpp-python --force-reinstall --no-cache-dir
+  python3 -m pip install llama-cpp-python --force-reinstall --no-cache-dir
 
 # Python deps
 echo "Installing Python requirements..."
-pip install -r "$REPO_ROOT/requirements.txt"
+python3 -m pip install -r "$REPO_ROOT/requirements.txt"
 
 # Generate gRPC stubs
 echo "Generating gRPC stubs..."

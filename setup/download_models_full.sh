@@ -6,11 +6,9 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MODELS_DIR="$REPO_ROOT/models"
 mkdir -p "$MODELS_DIR"
 
-# Ensure huggingface_hub is installed
 python3 -c "import huggingface_hub" 2>/dev/null || python3 -m pip install huggingface_hub -q
 
 echo "=== Downloading full model suite for Chameleon ==="
-echo "Warning: ~50-100GB of disk space required."
 echo ""
 
 download_model() {
@@ -30,42 +28,30 @@ import shutil, os
 path = hf_hub_download(repo_id='$repo', filename='$hf_filename')
 dest = os.path.join('$MODELS_DIR', '$local_name')
 shutil.copy2(path, dest)
-print(f'  Saved to {dest}')
+print(f'  Saved: {os.path.getsize(dest) / 1e9:.1f} GB')
 "
 }
 
 # Llama 3.2 1B
 echo "--- Llama 3.2 1B ---"
-download_model bartowski/Llama-3.2-1B-Instruct-GGUF \
-  Llama-3.2-1B-Instruct-f16.gguf llama-3.2-1b-f16.gguf
-download_model bartowski/Llama-3.2-1B-Instruct-GGUF \
-  Llama-3.2-1B-Instruct-Q8_0.gguf llama-3.2-1b-q8_0.gguf
-download_model bartowski/Llama-3.2-1B-Instruct-GGUF \
-  Llama-3.2-1B-Instruct-Q4_0.gguf llama-3.2-1b-q4_0.gguf
-download_model bartowski/Llama-3.2-1B-Instruct-GGUF \
-  Llama-3.2-1B-Instruct-Q2_K.gguf llama-3.2-1b-q2_k.gguf
+download_model bartowski/Llama-3.2-1B-Instruct-GGUF Llama-3.2-1B-Instruct-f16.gguf llama-3.2-1b-f16.gguf
+download_model bartowski/Llama-3.2-1B-Instruct-GGUF Llama-3.2-1B-Instruct-Q8_0.gguf llama-3.2-1b-q8_0.gguf
+download_model bartowski/Llama-3.2-1B-Instruct-GGUF Llama-3.2-1B-Instruct-Q4_0.gguf llama-3.2-1b-q4_0.gguf
+download_model bartowski/Llama-3.2-1B-Instruct-GGUF Llama-3.2-1B-Instruct-Q3_K_L.gguf llama-3.2-1b-q3_k_l.gguf
 
 # Llama 3.2 3B
 echo "--- Llama 3.2 3B ---"
-download_model bartowski/Llama-3.2-3B-Instruct-GGUF \
-  Llama-3.2-3B-Instruct-f16.gguf llama-3.2-3b-f16.gguf
-download_model bartowski/Llama-3.2-3B-Instruct-GGUF \
-  Llama-3.2-3B-Instruct-Q8_0.gguf llama-3.2-3b-q8_0.gguf
-download_model bartowski/Llama-3.2-3B-Instruct-GGUF \
-  Llama-3.2-3B-Instruct-Q4_0.gguf llama-3.2-3b-q4_0.gguf
-download_model bartowski/Llama-3.2-3B-Instruct-GGUF \
-  Llama-3.2-3B-Instruct-Q2_K.gguf llama-3.2-3b-q2_k.gguf
+download_model bartowski/Llama-3.2-3B-Instruct-GGUF Llama-3.2-3B-Instruct-f16.gguf llama-3.2-3b-f16.gguf
+download_model bartowski/Llama-3.2-3B-Instruct-GGUF Llama-3.2-3B-Instruct-Q8_0.gguf llama-3.2-3b-q8_0.gguf
+download_model bartowski/Llama-3.2-3B-Instruct-GGUF Llama-3.2-3B-Instruct-Q4_0.gguf llama-3.2-3b-q4_0.gguf
+download_model bartowski/Llama-3.2-3B-Instruct-GGUF Llama-3.2-3B-Instruct-Q3_K_L.gguf llama-3.2-3b-q3_k_l.gguf
 
-# DeepSeek 7B
+# DeepSeek 7B (TheBloke, no FP16 available)
 echo "--- DeepSeek 7B ---"
-download_model bartowski/deepseek-llm-7b-chat-GGUF \
-  deepseek-llm-7b-chat-f16.gguf deepseek-7b-f16.gguf
-download_model bartowski/deepseek-llm-7b-chat-GGUF \
-  deepseek-llm-7b-chat-Q8_0.gguf deepseek-7b-q8_0.gguf
-download_model bartowski/deepseek-llm-7b-chat-GGUF \
-  deepseek-llm-7b-chat-Q4_0.gguf deepseek-7b-q4_0.gguf
-download_model bartowski/deepseek-llm-7b-chat-GGUF \
-  deepseek-llm-7b-chat-Q2_K.gguf deepseek-7b-q2_k.gguf
+download_model TheBloke/deepseek-llm-7B-chat-GGUF deepseek-llm-7b-chat.Q8_0.gguf deepseek-7b-q8_0.gguf
+download_model TheBloke/deepseek-llm-7B-chat-GGUF deepseek-llm-7b-chat.Q4_0.gguf deepseek-7b-q4_0.gguf
+download_model TheBloke/deepseek-llm-7B-chat-GGUF deepseek-llm-7b-chat.Q3_K_L.gguf deepseek-7b-q3_k_l.gguf
+download_model TheBloke/deepseek-llm-7B-chat-GGUF deepseek-llm-7b-chat.Q2_K.gguf deepseek-7b-q2_k.gguf
 
 echo ""
 echo "=== Download complete ==="

@@ -34,19 +34,35 @@ log = logging.getLogger("decode")
 
 
 class DecodeServicer(kvcache_pb2_grpc.KVCacheServiceServicer):
-    def __init__(self, model_path: str, n_threads: int, n_ctx: int, n_gpu_layers: int, model_id: str):
+    def __init__(self, model_path: str, n_threads: int, n_ctx: int, n_gpu_layers: int,
+                 model_id: str, backend: str = "cpu",
+                 cache_type_k: str = "f16", cache_type_v: str = "f16"):
         self.model_id = model_id
         self.active_requests = 0
+        self.backend = backend
 
-        log.info(f"Loading model: {model_path}")
+        # Resolve GPU layers
+        effective_gpu_layers = -1 if backend == "cuda" else n_gpu_layers
+
+        # Build extra kwargs for KV cache precision (llama-cpp-python >= 0.3.x)
+        extra_kwargs: dict = {}
+        if cache_type_k != "f16":
+            extra_kwargs["type_k"] = cache_type_k
+        if cache_type_v != "f16":
+            extra_kwargs["type_v"] = cache_type_v
+
+        log.info(f"Loading model: {model_path} backend={backend} "
+                 f"n_gpu_layers={effective_gpu_layers} "
+                 f"cache_type_k={cache_type_k} cache_type_v={cache_type_v}")
         self.llm = Llama(
             model_path=model_path,
             n_threads=n_threads,
             n_ctx=n_ctx,
-            n_gpu_layers=n_gpu_layers,
+            n_gpu_layers=effective_gpu_layers,
             verbose=False,
+            **extra_kwargs,
         )
-        log.info(f"Model loaded. model_id={model_id}")
+        log.info(f"Model loaded. model_id={model_id} backend={backend}")
 
     def GenerateTokens(self, request: kvcache_pb2.GenerateRequest, context):
         """
@@ -162,7 +178,14 @@ class DecodeServicer(kvcache_pb2_grpc.KVCacheServiceServicer):
 
 def serve(args):
     env = os.environ.get("LLMSCALE_ENV", "chameleon")
-    n_gpu_layers = -1 if env == "local" else 0
+    backend = args.backend
+    if backend == "cpu":
+        n_gpu_layers = 0
+    elif backend == "cuda":
+        n_gpu_layers = -1
+    else:
+        n_gpu_layers = -1 if env == "local" else 0
+        backend = "cpu"
 
     servicer = DecodeServicer(
         model_path=args.model_path,
@@ -170,6 +193,9 @@ def serve(args):
         n_ctx=args.n_ctx,
         n_gpu_layers=n_gpu_layers,
         model_id=args.model_id,
+        backend=backend,
+        cache_type_k=args.cache_type_k,
+        cache_type_v=args.cache_type_v,
     )
 
     MAX_MSG = 512 * 1024 * 1024  # 512MB for large KV caches
@@ -198,5 +224,12 @@ if __name__ == "__main__":
     parser.add_argument("--n-threads", type=int, default=os.cpu_count())
     parser.add_argument("--n-ctx", type=int, default=4096)
     parser.add_argument("--port", type=int, default=50052)
+    parser.add_argument("--backend", choices=["cpu", "cuda"], default="cpu",
+                        help="Inference backend. cuda: full GPU offload (n_gpu_layers=-1).")
+    parser.add_argument("--cache-type-k", dest="cache_type_k", default="f16",
+                        help="KV cache key precision (f16, q8_0, q4_0). "
+                             "Use f16 to accept FP16 KV state from GPU prefill into Q4 decode model.")
+    parser.add_argument("--cache-type-v", dest="cache_type_v", default="f16",
+                        help="KV cache value precision (f16, q8_0, q4_0).")
     args = parser.parse_args()
     serve(args)

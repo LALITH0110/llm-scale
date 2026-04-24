@@ -34,20 +34,25 @@ log = logging.getLogger("prefill")
 
 
 class PrefillServicer(kvcache_pb2_grpc.KVCacheServiceServicer):
-    def __init__(self, model_path: str, n_threads: int, n_ctx: int, n_gpu_layers: int, model_id: str):
+    def __init__(self, model_path: str, n_threads: int, n_ctx: int, n_gpu_layers: int,
+                 model_id: str, backend: str = "cpu"):
         self.model_id = model_id
         self.n_threads = n_threads
         self.active_requests = 0
+        self.backend = backend
 
-        log.info(f"Loading model: {model_path}")
+        # Resolve GPU layers: cuda backend forces full offload; cpu backend uses arg value
+        effective_gpu_layers = -1 if backend == "cuda" else n_gpu_layers
+
+        log.info(f"Loading model: {model_path} backend={backend} n_gpu_layers={effective_gpu_layers}")
         self.llm = Llama(
             model_path=model_path,
             n_threads=n_threads,
             n_ctx=n_ctx,
-            n_gpu_layers=n_gpu_layers,
+            n_gpu_layers=effective_gpu_layers,
             verbose=False,
         )
-        log.info(f"Model loaded. model_id={model_id}")
+        log.info(f"Model loaded. model_id={model_id} backend={backend}")
 
     def TransferKVCache(self, request, context):
         """Not used directly by the router — see GenerateTokens flow."""
@@ -113,7 +118,16 @@ class PrefillServicer(kvcache_pb2_grpc.KVCacheServiceServicer):
 
 def serve(args):
     env = os.environ.get("LLMSCALE_ENV", "chameleon")
-    n_gpu_layers = -1 if env == "local" else 0
+    # Backend flag overrides env-based heuristic
+    backend = args.backend
+    if backend == "cpu":
+        n_gpu_layers = 0
+    elif backend == "cuda":
+        n_gpu_layers = -1
+    else:
+        # legacy: local env uses Metal offload, Chameleon CPU-only
+        n_gpu_layers = -1 if env == "local" else 0
+        backend = "cpu"
 
     servicer = PrefillServicer(
         model_path=args.model_path,
@@ -121,6 +135,7 @@ def serve(args):
         n_ctx=args.n_ctx,
         n_gpu_layers=n_gpu_layers,
         model_id=args.model_id,
+        backend=backend,
     )
 
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=4))
@@ -142,5 +157,7 @@ if __name__ == "__main__":
     parser.add_argument("--n-threads", type=int, default=os.cpu_count())
     parser.add_argument("--n-ctx", type=int, default=4096)
     parser.add_argument("--port", type=int, default=50051)
+    parser.add_argument("--backend", choices=["cpu", "cuda"], default="cpu",
+                        help="Inference backend. cuda: full GPU offload (n_gpu_layers=-1).")
     args = parser.parse_args()
     serve(args)

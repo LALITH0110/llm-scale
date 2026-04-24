@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Install for Chameleon Cloud (Ubuntu, CPU-only)
+# Install for Chameleon Cloud (Ubuntu).
+# Detects GPU via nvidia-smi and installs CUDA llama-cpp-python + vLLM on GPU nodes.
+# Falls back to CPU-only (AVX2/AVX512) build on CPU nodes.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -42,17 +44,52 @@ if ! command -v node_exporter &>/dev/null; then
   echo "node_exporter installed. Start with: nohup node_exporter &"
 fi
 
-# Detect CPU features
-AVX512_FLAG=""
-if grep -q avx512f /proc/cpuinfo 2>/dev/null; then
-  AVX512_FLAG="-DLLAMA_AVX512=on"
-  echo "AVX512 detected: enabled"
+# ---------------------------------------------------------------------------
+# Detect GPU presence
+# ---------------------------------------------------------------------------
+HAS_GPU=false
+if command -v nvidia-smi &>/dev/null && nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null | grep -q .; then
+  HAS_GPU=true
+  GPU_NAME=$(nvidia-smi --query-gpu=name --format=csv,noheader | head -1)
+  echo "GPU detected: ${GPU_NAME}"
+else
+  echo "No GPU detected (or nvidia-smi unavailable) — CPU-only path"
 fi
 
-# llama-cpp-python CPU-optimized
-echo "Installing llama-cpp-python (CPU, AVX2${AVX512_FLAG:+ + AVX512})..."
-CMAKE_ARGS="-DLLAMA_NATIVE=on -DLLAMA_AVX2=on ${AVX512_FLAG}" \
-  python3 -m pip install llama-cpp-python --force-reinstall --no-cache-dir
+if [ "$HAS_GPU" = "true" ]; then
+  # -------------------------------------------------------------------------
+  # GPU node: install llama-cpp-python with CUDA support
+  # -------------------------------------------------------------------------
+  echo "Installing llama-cpp-python with CUDA (source build, GGML_CUDA=on)..."
+  # Prebuilt wheels are pinned to specific CUDA versions and often miss.
+  # Source build against the node's local nvcc is more reliable.
+  CMAKE_ARGS="-DGGML_CUDA=on -DCMAKE_CUDA_ARCHITECTURES=native" \
+    python3 -m pip install llama-cpp-python --force-reinstall --no-cache-dir
+
+  # Verify CUDA offload works
+  python3 -c "import llama_cpp; assert llama_cpp.llama_supports_gpu_offload(), 'CUDA offload not enabled!'; print('llama-cpp-python CUDA: OK')"
+
+  # -------------------------------------------------------------------------
+  # vLLM for Exp 8 (GPU batched baseline)
+  # Chameleon CUDA driver varies (12.1-12.4); let pip auto-select the wheel.
+  # -------------------------------------------------------------------------
+  echo "Installing vLLM for GPU batched baseline (Exp 8)..."
+  python3 -m pip install vllm
+
+else
+  # -------------------------------------------------------------------------
+  # CPU node: AVX2 + AVX512 llama-cpp-python
+  # -------------------------------------------------------------------------
+  AVX512_FLAG=""
+  if grep -q avx512f /proc/cpuinfo 2>/dev/null; then
+    AVX512_FLAG="-DLLAMA_AVX512=on"
+    echo "AVX512 detected: enabled"
+  fi
+
+  echo "Installing llama-cpp-python (CPU, AVX2${AVX512_FLAG:+ + AVX512})..."
+  CMAKE_ARGS="-DLLAMA_NATIVE=on -DLLAMA_AVX2=on ${AVX512_FLAG}" \
+    python3 -m pip install llama-cpp-python --force-reinstall --no-cache-dir
+fi
 
 # Python deps
 echo "Installing Python requirements..."
@@ -77,5 +114,11 @@ echo "  export LLMSCALE_ENV=chameleon"
 echo "  make download-full  # downloads all models"
 echo "  make exp1"
 echo ""
+echo "For GPU experiments:"
+echo "  make exp4  # GPU colocated baseline"
+echo "  make exp8  # vLLM batched baseline"
+echo ""
 echo "For multi-node disaggregated:"
 echo "  PREFILL_HOST=<ip> DECODE_HOSTS=<ip1>,<ip2> make exp2"
+echo "For hybrid (GPU prefill + CPU decode):"
+echo "  PREFILL_HOST=<gpu-ip> DECODE_HOSTS=<cpu-ip> make exp6"

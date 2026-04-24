@@ -37,3 +37,106 @@ models:
       q4_0: deepseek-llm-7b-chat.Q4_0.gguf
       q3_k_l: deepseek-llm-7b-chat.Q3_K_L.gguf
       q2_k: deepseek-llm-7b-chat.Q2_K.gguf
+
+  # --- Gemma 3 family (bartowski GGUF, multi-quant sweep) ---
+  - name: gemma-3-1b
+    hf_repo: bartowski/google_gemma-3-1b-it-GGUF
+    variants:
+      fp16: models/gemma-3-1b-f16.gguf
+      q8_0: models/gemma-3-1b-q8_0.gguf
+      q4_0: models/gemma-3-1b-q4_0.gguf
+      q3_k_l: models/gemma-3-1b-q3_k_l.gguf
+    hf_filenames:
+      fp16: google_gemma-3-1b-it-f16.gguf
+      q8_0: google_gemma-3-1b-it-Q8_0.gguf
+      q4_0: google_gemma-3-1b-it-Q4_0.gguf
+      q3_k_l: google_gemma-3-1b-it-Q3_K_L.gguf
+
+  # FP16 from non-qat repo; q8_0/q4_0/q3_k_l from QAT repo (better low-bit quality)
+  - name: gemma-3-4b
+    hf_repo: bartowski/google_gemma-3-4b-it-qat-GGUF
+    variants:
+      fp16: models/gemma-3-4b-f16.gguf
+      q8_0: models/gemma-3-4b-q8_0.gguf
+      q4_0: models/gemma-3-4b-q4_0.gguf
+      q3_k_l: models/gemma-3-4b-q3_k_l.gguf
+    hf_filenames:
+      fp16: google_gemma-3-4b-it-f16.gguf
+      q8_0: google_gemma-3-4b-it-qat-Q8_0.gguf
+      q4_0: google_gemma-3-4b-it-qat-Q4_0.gguf
+      q3_k_l: google_gemma-3-4b-it-qat-Q3_K_L.gguf
+    # NOTE: fp16 must be downloaded from bartowski/google_gemma-3-4b-it-GGUF
+    # (QAT repo has no FP16). All other quants from qat repo above.
+    hf_repo_fp16: bartowski/google_gemma-3-4b-it-GGUF
+
+  - name: gemma-3-12b
+    hf_repo: bartowski/google_gemma-3-12b-it-qat-GGUF
+    variants:
+      q8_0: models/gemma-3-12b-q8_0.gguf
+      q4_0: models/gemma-3-12b-q4_0.gguf
+    hf_filenames:
+      q8_0: google_gemma-3-12b-it-qat-Q8_0.gguf
+      q4_0: google_gemma-3-12b-it-qat-Q4_0.gguf
+
+  - name: gemma-3-27b
+    hf_repo: bartowski/google_gemma-3-27b-it-qat-GGUF
+    variants:
+      q8_0: models/gemma-3-27b-q8_0.gguf
+      q4_0: models/gemma-3-27b-q4_0.gguf
+    hf_filenames:
+      q8_0: google_gemma-3-27b-it-qat-Q8_0.gguf
+      q4_0: google_gemma-3-27b-it-qat-Q4_0.gguf
+
+  # --- DeepSeek-R1-Distill variants ---
+  - name: deepseek-r1-distill-qwen-7b
+    hf_repo: bartowski/DeepSeek-R1-Distill-Qwen-7B-GGUF
+    variants:
+      fp16: models/deepseek-r1-distill-qwen-7b-f16.gguf
+      q8_0: models/deepseek-r1-distill-qwen-7b-q8_0.gguf
+      q4_0: models/deepseek-r1-distill-qwen-7b-q4_0.gguf
+      q3_k_l: models/deepseek-r1-distill-qwen-7b-q3_k_l.gguf
+    hf_filenames:
+      fp16: DeepSeek-R1-Distill-Qwen-7B-f16.gguf
+      q8_0: DeepSeek-R1-Distill-Qwen-7B-Q8_0.gguf
+      q4_0: DeepSeek-R1-Distill-Qwen-7B-Q4_0.gguf
+      q3_k_l: DeepSeek-R1-Distill-Qwen-7B-Q3_K_L.gguf
+
+  - name: deepseek-r1-distill-llama-8b
+    hf_repo: bartowski/DeepSeek-R1-Distill-Llama-8B-GGUF
+    variants:
+      fp16: models/deepseek-r1-distill-llama-8b-f16.gguf
+      q8_0: models/deepseek-r1-distill-llama-8b-q8_0.gguf
+      q4_0: models/deepseek-r1-distill-llama-8b-q4_0.gguf
+      q3_k_l: models/deepseek-r1-distill-llama-8b-q3_k_l.gguf
+    hf_filenames:
+      fp16: DeepSeek-R1-Distill-Llama-8B-f16.gguf
+      q8_0: DeepSeek-R1-Distill-Llama-8B-Q8_0.gguf
+      q4_0: DeepSeek-R1-Distill-Llama-8B-Q4_0.gguf
+      q3_k_l: DeepSeek-R1-Distill-Llama-8B-Q3_K_L.gguf
+
+  # --- Qwen 2.5 (control group) ---
+  - name: qwen2.5-7b
+    hf_repo: bartowski/Qwen2.5-7B-Instruct-GGUF
+    variants:
+      fp16: models/qwen2.5-7b-f16.gguf
+      q8_0: models/qwen2.5-7b-q8_0.gguf
+      q4_0: models/qwen2.5-7b-q4_0.gguf
+      q3_k_l: models/qwen2.5-7b-q3_k_l.gguf
+    hf_filenames:
+      fp16: Qwen2.5-7B-Instruct-f16.gguf
+      q8_0: Qwen2.5-7B-Instruct-Q8_0.gguf
+      q4_0: Qwen2.5-7B-Instruct-Q4_0.gguf
+      q3_k_l: Qwen2.5-7B-Instruct-Q3_K_L.gguf
+
+  - name: qwen2.5-14b
+    hf_repo: bartowski/Qwen2.5-14B-Instruct-GGUF
+    variants:
+      fp16: models/qwen2.5-14b-f16.gguf
+      q8_0: models/qwen2.5-14b-q8_0.gguf
+      q4_0: models/qwen2.5-14b-q4_0.gguf
+      q3_k_l: models/qwen2.5-14b-q3_k_l.gguf
+    hf_filenames:
+      fp16: Qwen2.5-14B-Instruct-f16.gguf
+      q8_0: Qwen2.5-14B-Instruct-Q8_0.gguf
+      q4_0: Qwen2.5-14B-Instruct-Q4_0.gguf
+      q3_k_l: Qwen2.5-14B-Instruct-Q3_K_L.gguf

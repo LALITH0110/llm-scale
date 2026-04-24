@@ -261,7 +261,14 @@ def main(args):
     global _router_config
 
     env = os.environ.get("LLMSCALE_ENV", "chameleon")
-    n_gpu_layers = -1 if env == "local" else 0
+    if args.backend == "cuda":
+        n_gpu_layers = -1
+    elif args.backend == "cpu":
+        n_gpu_layers = 0
+    else:
+        n_gpu_layers = -1 if env == "local" else 0
+
+    log.info(f"Router backend={args.backend} n_gpu_layers={n_gpu_layers}")
 
     decode_hosts = args.decode_hosts.split(",") if args.decode_hosts else ["localhost"]
 
@@ -292,5 +299,7 @@ if __name__ == "__main__":
     parser.add_argument("--port", type=int, default=8000)
     parser.add_argument("--local-prefill", action="store_true",
                         help="Run prefill in-process (no separate prefill server)")
+    parser.add_argument("--backend", choices=["cpu", "cuda", "auto"], default="auto",
+                        help="Prefill backend: cpu offloads nothing, cuda offloads all layers, auto uses LLMSCALE_ENV")
     args = parser.parse_args()
     main(args)

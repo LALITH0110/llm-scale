@@ -35,6 +35,74 @@ hetero_quant:
     - prefill_quant: q8_0
       decode_quant: q3_k_l
 
+gpu_colocated:
+  # Exp 4: single GPU node, sweep batch sizes, measure goodput
+  batch_sizes: [1, 4, 16, 32, 64]
+  n_predict: 128
+  n_ctx: 4096
+  slo_ttft_ms: 500
+  slo_tpot_ms: 50
+  repetitions: 3
+
+gpu_disaggregated:
+  # Exp 5: 2x GPU nodes, gRPC KV transfer (DistServe replica on Chameleon 10GbE)
+  batch_sizes: [1, 4, 16, 32, 64]
+  pd_ratios:
+    - prefill: 1
+      decode: 1
+    - prefill: 1
+      decode: 2
+  prefill_port: 50051
+  decode_port_base: 50052
+  router_port: 8001
+  n_predict: 128
+  n_ctx: 4096
+  repetitions: 3
+
+hybrid_gpu_prefill_cpu_decode:
+  # Exp 6: GPU prefill + CPU decode; sweep output lengths to find break-even
+  output_lengths: [128, 512, 2048]
+  n_ctx: 4096
+  prefill_backend: cuda
+  decode_backend: cpu
+  # Phase A: FP16 both sides (concept proof)
+  phase_a:
+    prefill_quant: fp16
+    decode_quant: fp16
+  # Phase B: FP16 prefill -> Q4 decode with cache-type-k f16
+  phase_b:
+    prefill_quant: fp16
+    decode_quant: q4_0
+    cache_type_k: f16
+    cache_type_v: f16
+  prefill_port: 50051
+  decode_port_base: 50052
+  router_port: 8002
+  repetitions: 3
+
+reverse_hybrid_cpu_prefill_gpu_decode:
+  # Exp 7: CPU prefill + GPU decode (sanity check, expect worse than hybrid)
+  output_lengths: [128]
+  n_ctx: 4096
+  prefill_backend: cpu
+  decode_backend: cuda
+  prefill_quant: q4_0
+  decode_quant: fp16
+  prefill_port: 50051
+  decode_port_base: 50052
+  router_port: 8003
+  repetitions: 2
+  # Small run: 1 model x 1 quant only
+  models: [llama-3.2-3b]
+  quants: [q4_0]
+
+gpu_batched_baseline:
+  # Exp 8: vLLM batched baseline for honest $/token comparison
+  batch_sizes: [1, 8, 32, 64, 128]
+  n_predict: 128
+  n_ctx: 4096
+  repetitions: 3
+
 # Local dev overrides (used when LLMSCALE_ENV=local)
 local_overrides:
   core_counts: [1, 2, 4, 8]

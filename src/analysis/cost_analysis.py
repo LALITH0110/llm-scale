@@ -122,7 +122,7 @@ def plot_tokens_per_dollar(df: pd.DataFrame):
     labels = list(bars_data.keys())
     values = list(bars_data.values())
     colors = (
-        [sns.color_palette("tab10")[i] for i in range(len(df["model_quant"].unique()) if not df.empty else 0)]
+        [sns.color_palette("tab20")[i] for i in range(len(df["model_quant"].unique()) if not df.empty else 0)]
         + ["#e74c3c"] * len(GPU_BASELINES)
     )
 

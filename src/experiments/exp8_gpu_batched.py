@@ -86,8 +86,8 @@ def query_gpu_stats() -> tuple[float, float]:
         return 0.0, 0.0
 
 
-# vLLM requires HuggingFace model IDs or local paths to safetensors.
-# Map GGUF model names to their HuggingFace equivalents.
+# vLLM requires HuggingFace model IDs (safetensors, not GGUF).
+# Gated models (meta-llama, google) require HF_TOKEN env var.
 VLLM_MODEL_MAP = {
     "llama-3.2-1b": "meta-llama/Llama-3.2-1B-Instruct",
     "llama-3.2-3b": "meta-llama/Llama-3.2-3B-Instruct",
@@ -97,6 +97,14 @@ VLLM_MODEL_MAP = {
     "deepseek-r1-distill-llama-8b": "deepseek-ai/DeepSeek-R1-Distill-Llama-8B",
     "qwen2.5-7b":  "Qwen/Qwen2.5-7B-Instruct",
     "qwen2.5-14b": "Qwen/Qwen2.5-14B-Instruct",
+}
+
+# Models that require a HuggingFace access token (gated repos)
+GATED_MODELS = {
+    "meta-llama/Llama-3.2-1B-Instruct",
+    "meta-llama/Llama-3.2-3B-Instruct",
+    "google/gemma-3-1b-it",
+    "google/gemma-3-4b-it",
 }
 
 
@@ -217,6 +225,11 @@ def main(smoke: bool = False):
         hf_model = VLLM_MODEL_MAP.get(model_name)
         if not hf_model:
             print(f"SKIP {model_name}: no vLLM HuggingFace mapping defined")
+            continue
+
+        hf_token = os.environ.get("HF_TOKEN") or os.environ.get("HUGGING_FACE_HUB_TOKEN")
+        if hf_model in GATED_MODELS and not hf_token:
+            print(f"SKIP {model_name}: gated model requires HF_TOKEN env var")
             continue
 
         for batch_size in batch_sizes:

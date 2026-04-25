@@ -1,7 +1,8 @@
 """
 Exp 4: GPU colocated baseline (Config C3).
 Single GPU node, llama-cpp-python CUDA backend (n_gpu_layers=-1).
-Sweeps batch sizes [1, 4, 16, 32, 64] to measure honest GPU $/token.
+Sweeps batch sizes [1, 4, 16, 32, 64] — each batch_size runs that many
+sequential inferences per rep to show aggregate throughput vs GPU single-stream.
 Metrics: TTFT, TPOT, throughput, goodput (SLO: TTFT<500ms, TPOT<50ms), GPU util, VRAM.
 
 Usage:
@@ -9,6 +10,7 @@ Usage:
   python -m src.experiments.exp4_gpu_colocated --smoke  # 1 model x 1 quant x 1 batch
   LLMSCALE_ENV=local python -m src.experiments.exp4_gpu_colocated
 """
+import gc
 import os
 import sys
 import csv
@@ -32,7 +34,6 @@ except ImportError:
     _LLAMA_AVAILABLE = False
 
 
-# SLO thresholds (ms)
 SLO_TTFT_MS = 500.0
 SLO_TPOT_MS = 50.0
 
@@ -66,7 +67,7 @@ def load_configs():
 
 
 def query_gpu_stats() -> tuple[float, float]:
-    """Return (utilization_pct, vram_used_mb) from nvidia-smi. Returns (0, 0) if unavailable."""
+    """Return (utilization_pct, vram_used_mb). Returns (0, 0) if unavailable."""
     try:
         out = subprocess.check_output(
             ["nvidia-smi",
@@ -75,25 +76,15 @@ def query_gpu_stats() -> tuple[float, float]:
             timeout=5, stderr=subprocess.DEVNULL
         ).decode().strip().splitlines()[0]
         parts = [p.strip() for p in out.split(",")]
-        util = float(parts[0])
-        vram = float(parts[1])
-        return util, vram
+        return float(parts[0]), float(parts[1])
     except Exception:
         return 0.0, 0.0
 
 
-def run_single(
-    model_path: str,
-    prompt: str,
-    n_predict: int,
-    n_ctx: int,
-    n_gpu_layers: int,
-    batch_size: int,
-) -> dict:
+def run_one_inference(llm: "Llama", prompt: str, n_predict: int) -> dict:
     """
-    Single inference pass with the given model.
-    batch_size > 1: submit the same prompt batch_size times and aggregate.
-    Returns timing dict.
+    One inference pass on an already-loaded model.
+    Resets model state before running so it can be called in a batch loop.
     """
     result = {
         "ttft_ms": 0.0,
@@ -104,40 +95,23 @@ def run_single(
         "prompt_len_tokens": 0,
         "error": None,
     }
-
-    if not _LLAMA_AVAILABLE:
-        result["error"] = "llama-cpp-python not installed"
-        return result
-
     try:
-        llm = Llama(
-            model_path=model_path,
-            n_threads=4,          # GPU path: few threads for CPU bookkeeping
-            n_ctx=n_ctx * batch_size,
-            n_gpu_layers=n_gpu_layers,
-            n_batch=512,
-            verbose=False,
-        )
-
+        llm.reset()
         tokens = llm.tokenize(prompt.encode("utf-8"))
         result["prompt_len_tokens"] = len(tokens)
 
-        # --- TTFT: time first token (batch = 1 prefill pass) ---
         t0 = time.perf_counter()
         llm.eval(tokens)
         ttft_ms = (time.perf_counter() - t0) * 1000.0
         result["ttft_ms"] = ttft_ms
 
-        # --- Decode phase ---
         token_latencies: List[float] = []
         tokens_generated = 0
-
         for _ in range(n_predict):
             t_tok = time.perf_counter()
             token_id = llm.sample(top_k=1, top_p=1.0, temp=0.0, repeat_penalty=1.0)
             tpot = (time.perf_counter() - t_tok) * 1000.0
             token_latencies.append(tpot)
-
             if token_id == llm.token_eos():
                 break
             tokens_generated += 1
@@ -150,12 +124,50 @@ def run_single(
             total_ms = sum(token_latencies)
             result["throughput_tps"] = tokens_generated / (total_ms / 1000.0) if total_ms > 0 else 0.0
 
-        del llm
-
     except Exception as e:
         result["error"] = str(e)
-
     return result
+
+
+def run_batch(llm: "Llama", prompt: str, n_predict: int, batch_size: int) -> dict:
+    """
+    Run batch_size sequential inferences on the same loaded model.
+    Reports: mean per-request TTFT/TPOT, aggregate throughput (total_tokens / total_time).
+    This simulates sequential request processing — honest baseline for llama.cpp GPU.
+    """
+    ttfts, tpots, tpot_stds, total_tokens = [], [], [], 0
+    t_batch_start = time.perf_counter()
+    first_error = None
+
+    for _ in range(batch_size):
+        r = run_one_inference(llm, prompt, n_predict)
+        if r["error"]:
+            first_error = r["error"]
+            break
+        ttfts.append(r["ttft_ms"])
+        tpots.append(r["tpot_ms"])
+        tpot_stds.append(r["tpot_std_ms"])
+        total_tokens += r["tokens_generated"]
+
+    total_batch_ms = (time.perf_counter() - t_batch_start) * 1000.0
+
+    if first_error or not ttfts:
+        return {
+            "ttft_ms": 0.0, "tpot_ms": 0.0, "tpot_std_ms": 0.0,
+            "throughput_tps": 0.0, "tokens_generated": 0,
+            "prompt_len_tokens": 0, "error": first_error or "no results",
+        }
+
+    return {
+        "ttft_ms": statistics.mean(ttfts),
+        "tpot_ms": statistics.mean(tpots),
+        "tpot_std_ms": statistics.mean(tpot_stds),
+        # Aggregate tps: all tokens across the full batch wall time
+        "throughput_tps": total_tokens / (total_batch_ms / 1000.0) if total_batch_ms > 0 else 0.0,
+        "tokens_generated": total_tokens,
+        "prompt_len_tokens": 0,   # set by caller
+        "error": None,
+    }
 
 
 def main(smoke: bool = False):
@@ -174,16 +186,13 @@ def main(smoke: bool = False):
     batch_sizes = gpu_cfg.get("batch_sizes", [1, 4, 16, 32, 64])
     repetitions = gpu_cfg.get("repetitions", 3)
 
-    # Smoke: minimal run for harness validation without GPU
     if smoke:
         batch_sizes = [1]
         repetitions = 1
         prompts = {k: v for k, v in list(prompts.items())[:1]}
 
-    # GPU: full offload
     n_gpu_layers = -1 if env != "local" else exp_cfg["local_overrides"].get("n_gpu_layers", -1)
 
-    # Model filter
     if env == "local":
         allowed_models = exp_cfg["local_overrides"]["models"]
         allowed_quants = exp_cfg["local_overrides"]["quants"]
@@ -218,6 +227,39 @@ def main(smoke: bool = False):
                 continue
 
             model_id = f"{model_name}:{quant}"
+            print(f"\n=== Loading {model_id} ===")
+
+            # Load model once; reuse across all batch sizes + prompts + reps
+            llm = None
+            load_error = None
+            try:
+                llm = Llama(
+                    model_path=model_path,
+                    n_threads=4,
+                    n_ctx=n_ctx,      # fixed — no batch_size multiplier
+                    n_gpu_layers=n_gpu_layers,
+                    n_batch=512,
+                    verbose=False,
+                )
+                print(f"  Loaded OK — n_ctx={n_ctx} n_gpu_layers={n_gpu_layers}")
+            except Exception as e:
+                load_error = str(e)
+                print(f"  LOAD ERROR: {load_error}")
+
+            if load_error:
+                # Record load error for all configs, skip inference
+                for batch_size in batch_sizes:
+                    for prompt_name in prompts:
+                        res = GpuColocResult(
+                            model_id=model_id, quant=quant, batch_size=batch_size,
+                            prompt_name=prompt_name, prompt_len_tokens=0,
+                            n_predict=n_predict, ttft_ms=0.0, tpot_ms=0.0,
+                            tpot_std_ms=0.0, throughput_tps=0.0, goodput_tps=0.0,
+                            slo_pass=False, tokens_generated=0,
+                            gpu_util_pct=0.0, vram_used_mb=0.0, error=load_error,
+                        )
+                        all_results.append(res)
+                continue
 
             for batch_size in batch_sizes:
                 for prompt_name, prompt_text in prompts.items():
@@ -227,18 +269,10 @@ def main(smoke: bool = False):
                     last_r = None
 
                     for rep in range(repetitions):
-                        gpu_util_before, vram_before = query_gpu_stats()
-                        r = run_single(
-                            model_path=model_path,
-                            prompt=prompt_text,
-                            n_predict=n_predict,
-                            n_ctx=n_ctx,
-                            n_gpu_layers=n_gpu_layers,
-                            batch_size=batch_size,
-                        )
+                        r = run_batch(llm, prompt_text, n_predict, batch_size)
                         gpu_util_after, vram_after = query_gpu_stats()
-
                         last_r = r
+
                         if not r["error"]:
                             rep_ttfts.append(r["ttft_ms"])
                             rep_tpots.append(r["tpot_ms"])
@@ -250,7 +284,6 @@ def main(smoke: bool = False):
                         else:
                             print(f"  rep {rep+1}: ERROR {r['error']}")
 
-                    # Aggregate across reps (median)
                     if rep_ttfts:
                         ttft_ms = statistics.median(rep_ttfts)
                         tpot_ms = statistics.median(rep_tpots)
@@ -283,7 +316,10 @@ def main(smoke: bool = False):
                     )
                     all_results.append(res)
 
-    # Write CSV
+            # Unload model before loading next
+            del llm
+            gc.collect()
+
     if all_results:
         with open(output_path, "w", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=list(asdict(all_results[0]).keys()))

@@ -42,15 +42,15 @@ models:
   - name: gemma-3-1b
     hf_repo: bartowski/google_gemma-3-1b-it-GGUF
     variants:
-      fp16: models/gemma-3-1b-f16.gguf
+      fp16: models/gemma-3-1b-bf16.gguf
       q8_0: models/gemma-3-1b-q8_0.gguf
       q4_0: models/gemma-3-1b-q4_0.gguf
       q3_k_l: models/gemma-3-1b-q3_k_l.gguf
     hf_filenames:
-      fp16: google_gemma-3-1b-it-f16.gguf
-      q8_0: google_gemma-3-1b-it-Q8_0.gguf
-      q4_0: google_gemma-3-1b-it-Q4_0.gguf
-      q3_k_l: google_gemma-3-1b-it-Q3_K_L.gguf
+      fp16: gemma-3-1b-it-bf16.gguf
+      q8_0: gemma-3-1b-it-Q8_0.gguf
+      q4_0: gemma-3-1b-it-Q4_0.gguf
+      q3_k_l: gemma-3-1b-it-Q3_K_L.gguf
 
   # FP16 from non-qat repo; q8_0/q4_0/q3_k_l from QAT repo (better low-bit quality)
   - name: gemma-3-4b
@@ -81,11 +81,10 @@ models:
   - name: gemma-3-27b
     hf_repo: bartowski/google_gemma-3-27b-it-qat-GGUF
     variants:
-      q8_0: models/gemma-3-27b-q8_0.gguf
       q4_0: models/gemma-3-27b-q4_0.gguf
     hf_filenames:
-      q8_0: google_gemma-3-27b-it-qat-Q8_0.gguf
       q4_0: google_gemma-3-27b-it-qat-Q4_0.gguf
+    # Q8_0 is 28.71GB split — exceeds RTX 6000 24GB VRAM, excluded
 
   # --- DeepSeek-R1-Distill variants ---
   - name: deepseek-r1-distill-qwen-7b

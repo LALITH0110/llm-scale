@@ -21,15 +21,20 @@ download_model() {
     return
   fi
 
+  # Clear HF cache before each download to avoid double-disk-usage
+  rm -rf "$HOME/.cache/huggingface/hub/" 2>/dev/null || true
+
   echo "  Downloading $local_name from $repo..."
   python3 -c "
 from huggingface_hub import hf_hub_download
 import shutil, os
 path = hf_hub_download(repo_id='$repo', filename='$hf_filename')
 dest = os.path.join('$MODELS_DIR', '$local_name')
-shutil.copy2(path, dest)
+shutil.move(path, dest)
 print(f'  Saved: {os.path.getsize(dest) / 1e9:.1f} GB')
 "
+  # Clean residual cache after move
+  rm -rf "$HOME/.cache/huggingface/hub/" 2>/dev/null || true
 }
 
 # Llama 3.2 1B

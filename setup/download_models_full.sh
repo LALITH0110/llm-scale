@@ -31,7 +31,8 @@ import shutil, os
 path = hf_hub_download(repo_id='$repo', filename='$hf_filename')
 dest = os.path.join('$MODELS_DIR', '$local_name')
 shutil.move(path, dest)
-print(f'  Saved: {os.path.getsize(dest) / 1e9:.1f} GB')
+size = os.path.getsize(dest) if os.path.isfile(dest) else os.path.getsize(path)
+print(f'  Saved: {size / 1e9:.1f} GB')
 "
   # Clean residual cache after move
   rm -rf "$HOME/.cache/huggingface/hub/" 2>/dev/null || true

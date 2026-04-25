@@ -30,11 +30,12 @@ from huggingface_hub import hf_hub_download
 import shutil, os
 path = hf_hub_download(repo_id='$repo', filename='$hf_filename')
 dest = os.path.join('$MODELS_DIR', '$local_name')
-shutil.move(path, dest)
-size = os.path.getsize(dest) if os.path.isfile(dest) else os.path.getsize(path)
-print(f'  Saved: {size / 1e9:.1f} GB')
+# Resolve symlink — HF cache creates symlinks; copy real bytes then let cache cleanup remove blob
+real = os.path.realpath(path)
+shutil.copy2(real, dest)
+print(f'  Saved: {os.path.getsize(dest) / 1e9:.1f} GB')
 "
-  # Clean residual cache after move
+  # Clean cache after copy (blob already copied to dest, symlink no longer needed)
   rm -rf "$HOME/.cache/huggingface/hub/" 2>/dev/null || true
 }
 

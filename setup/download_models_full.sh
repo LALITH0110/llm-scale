@@ -77,30 +77,26 @@ echo "--- Gemma 3 27B ---"
 download_model bartowski/google_gemma-3-27b-it-qat-GGUF google_gemma-3-27b-it-qat-Q4_0.gguf gemma-3-27b-q4_0.gguf
 
 # DeepSeek-R1-Distill Qwen 7B
+# FP16 skipped for 7B+ new models — disk budget; Q8_0 is equivalent quality
 echo "--- DeepSeek-R1-Distill Qwen 7B ---"
-download_model bartowski/DeepSeek-R1-Distill-Qwen-7B-GGUF DeepSeek-R1-Distill-Qwen-7B-f16.gguf deepseek-r1-distill-qwen-7b-f16.gguf
 download_model bartowski/DeepSeek-R1-Distill-Qwen-7B-GGUF DeepSeek-R1-Distill-Qwen-7B-Q8_0.gguf deepseek-r1-distill-qwen-7b-q8_0.gguf
 download_model bartowski/DeepSeek-R1-Distill-Qwen-7B-GGUF DeepSeek-R1-Distill-Qwen-7B-Q4_0.gguf deepseek-r1-distill-qwen-7b-q4_0.gguf
 download_model bartowski/DeepSeek-R1-Distill-Qwen-7B-GGUF DeepSeek-R1-Distill-Qwen-7B-Q3_K_L.gguf deepseek-r1-distill-qwen-7b-q3_k_l.gguf
 
 # DeepSeek-R1-Distill Llama 8B
 echo "--- DeepSeek-R1-Distill Llama 8B ---"
-download_model bartowski/DeepSeek-R1-Distill-Llama-8B-GGUF DeepSeek-R1-Distill-Llama-8B-f16.gguf deepseek-r1-distill-llama-8b-f16.gguf
 download_model bartowski/DeepSeek-R1-Distill-Llama-8B-GGUF DeepSeek-R1-Distill-Llama-8B-Q8_0.gguf deepseek-r1-distill-llama-8b-q8_0.gguf
 download_model bartowski/DeepSeek-R1-Distill-Llama-8B-GGUF DeepSeek-R1-Distill-Llama-8B-Q4_0.gguf deepseek-r1-distill-llama-8b-q4_0.gguf
 download_model bartowski/DeepSeek-R1-Distill-Llama-8B-GGUF DeepSeek-R1-Distill-Llama-8B-Q3_K_L.gguf deepseek-r1-distill-llama-8b-q3_k_l.gguf
 
 # Qwen 2.5 7B
 echo "--- Qwen 2.5 7B ---"
-download_model bartowski/Qwen2.5-7B-Instruct-GGUF Qwen2.5-7B-Instruct-f16.gguf qwen2.5-7b-f16.gguf
 download_model bartowski/Qwen2.5-7B-Instruct-GGUF Qwen2.5-7B-Instruct-Q8_0.gguf qwen2.5-7b-q8_0.gguf
 download_model bartowski/Qwen2.5-7B-Instruct-GGUF Qwen2.5-7B-Instruct-Q4_0.gguf qwen2.5-7b-q4_0.gguf
 download_model bartowski/Qwen2.5-7B-Instruct-GGUF Qwen2.5-7B-Instruct-Q3_K_L.gguf qwen2.5-7b-q3_k_l.gguf
 
-# Qwen 2.5 14B
+# Qwen 2.5 14B — Q4_0 only (Q8 is 15GB, too large relative to value)
 echo "--- Qwen 2.5 14B ---"
-download_model bartowski/Qwen2.5-14B-Instruct-GGUF Qwen2.5-14B-Instruct-f16.gguf qwen2.5-14b-f16.gguf
-download_model bartowski/Qwen2.5-14B-Instruct-GGUF Qwen2.5-14B-Instruct-Q8_0.gguf qwen2.5-14b-q8_0.gguf
 download_model bartowski/Qwen2.5-14B-Instruct-GGUF Qwen2.5-14B-Instruct-Q4_0.gguf qwen2.5-14b-q4_0.gguf
 download_model bartowski/Qwen2.5-14B-Instruct-GGUF Qwen2.5-14B-Instruct-Q3_K_L.gguf qwen2.5-14b-q3_k_l.gguf
 

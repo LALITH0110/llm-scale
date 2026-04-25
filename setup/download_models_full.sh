@@ -17,14 +17,29 @@ download_model() {
   local local_name="$3"
 
   if [ -f "$MODELS_DIR/$local_name" ]; then
-    echo "  Already exists: $local_name"
+    local size_mb
+    size_mb=$(du -m "$MODELS_DIR/$local_name" 2>/dev/null | cut -f1)
+    if [ "${size_mb:-0}" -gt 100 ]; then
+      echo "  Already exists: $local_name (${size_mb}MB)"
+      return
+    else
+      echo "  WARNING: $local_name looks corrupt (${size_mb}MB) — deleting and re-downloading"
+      rm -f "$MODELS_DIR/$local_name"
+    fi
+  fi
+
+  # Check free space: need ≥20GB headroom for HF cache + copy
+  local free_gb
+  free_gb=$(df -BG "$MODELS_DIR" | awk 'NR==2{gsub("G","",$4); print $4}')
+  if [ "${free_gb:-0}" -lt 20 ]; then
+    echo "  SKIP (only ${free_gb}GB free — need 20GB): $local_name"
     return
   fi
 
   # Clear HF cache before each download to avoid double-disk-usage
   rm -rf "$HOME/.cache/huggingface/hub/" 2>/dev/null || true
 
-  echo "  Downloading $local_name from $repo..."
+  echo "  Downloading $local_name from $repo... (${free_gb}GB free)"
   python3 -c "
 from huggingface_hub import hf_hub_download
 import shutil, os

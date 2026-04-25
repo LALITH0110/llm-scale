@@ -1,4 +1,6 @@
-.PHONY: setup-local setup-chameleon proto exp1 exp2 exp3 analyze clean
+.PHONY: setup-local setup-chameleon proto \
+        exp1 exp2 exp3 exp4 exp5 exp6 exp7 exp8 \
+        analyze clean
 
 setup-local:
 	bash setup/install_local.sh
@@ -27,6 +29,34 @@ exp2:
 
 exp3:
 	python src/experiments/exp3_hetero_quant.py
+
+exp4:
+	python src/experiments/exp4_gpu_colocated.py
+
+exp4-smoke:
+	python src/experiments/exp4_gpu_colocated.py --smoke
+
+exp5:
+	python src/experiments/exp5_gpu_disagg.py
+
+exp6:
+	PREFILL_HOST=$(PREFILL_HOST) DECODE_HOSTS=$(DECODE_HOSTS) \
+	python src/experiments/exp6_hybrid.py --phase a
+	PREFILL_HOST=$(PREFILL_HOST) DECODE_HOSTS=$(DECODE_HOSTS) \
+	python src/experiments/exp6_hybrid.py --phase b
+
+exp6-smoke:
+	python src/experiments/exp6_hybrid.py --smoke --phase a
+
+exp7:
+	PREFILL_HOST=$(PREFILL_HOST) DECODE_HOSTS=$(DECODE_HOSTS) \
+	python src/experiments/exp7_reverse_hybrid.py
+
+exp8:
+	python src/experiments/exp8_gpu_batched.py
+
+exp8-smoke:
+	python src/experiments/exp8_gpu_batched.py --smoke
 
 analyze:
 	python src/analysis/plot_scaling.py

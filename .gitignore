@@ -14,9 +14,10 @@ build/
 src/disaggregated/kvcache_pb2.py
 src/disaggregated/kvcache_pb2_grpc.py
 
-# Results (keep .gitkeep)
+# Results — track CSV data so Chameleon results survive lease expiry
 results/*
 !results/.gitkeep
+!results/*.csv
 
 # Models
 models/

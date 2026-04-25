@@ -47,10 +47,10 @@ models:
       q4_0: models/gemma-3-1b-q4_0.gguf
       q3_k_l: models/gemma-3-1b-q3_k_l.gguf
     hf_filenames:
-      fp16: gemma-3-1b-it-bf16.gguf
-      q8_0: gemma-3-1b-it-Q8_0.gguf
-      q4_0: gemma-3-1b-it-Q4_0.gguf
-      q3_k_l: gemma-3-1b-it-Q3_K_L.gguf
+      fp16: google_gemma-3-1b-it-bf16.gguf
+      q8_0: google_gemma-3-1b-it-Q8_0.gguf
+      q4_0: google_gemma-3-1b-it-Q4_0.gguf
+      q3_k_l: google_gemma-3-1b-it-Q3_K_L.gguf
 
   # FP16 from non-qat repo; q8_0/q4_0/q3_k_l from QAT repo (better low-bit quality)
   - name: gemma-3-4b

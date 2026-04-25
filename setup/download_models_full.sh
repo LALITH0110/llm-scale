@@ -55,10 +55,10 @@ download_model TheBloke/deepseek-llm-7B-chat-GGUF deepseek-llm-7b-chat.Q2_K.gguf
 
 # Gemma 3 1B (bartowski — note: no google_ prefix in filenames, bf16 not f16)
 echo "--- Gemma 3 1B ---"
-download_model bartowski/google_gemma-3-1b-it-GGUF gemma-3-1b-it-bf16.gguf gemma-3-1b-bf16.gguf
-download_model bartowski/google_gemma-3-1b-it-GGUF gemma-3-1b-it-Q8_0.gguf gemma-3-1b-q8_0.gguf
-download_model bartowski/google_gemma-3-1b-it-GGUF gemma-3-1b-it-Q4_0.gguf gemma-3-1b-q4_0.gguf
-download_model bartowski/google_gemma-3-1b-it-GGUF gemma-3-1b-it-Q3_K_L.gguf gemma-3-1b-q3_k_l.gguf
+download_model bartowski/google_gemma-3-1b-it-GGUF google_gemma-3-1b-it-bf16.gguf gemma-3-1b-bf16.gguf
+download_model bartowski/google_gemma-3-1b-it-GGUF google_gemma-3-1b-it-Q8_0.gguf gemma-3-1b-q8_0.gguf
+download_model bartowski/google_gemma-3-1b-it-GGUF google_gemma-3-1b-it-Q4_0.gguf gemma-3-1b-q4_0.gguf
+download_model bartowski/google_gemma-3-1b-it-GGUF google_gemma-3-1b-it-Q3_K_L.gguf gemma-3-1b-q3_k_l.gguf
 
 # Gemma 3 4B (FP16 from non-qat repo; quantized from QAT repo)
 echo "--- Gemma 3 4B ---"

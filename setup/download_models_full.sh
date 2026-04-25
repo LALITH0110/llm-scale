@@ -62,7 +62,7 @@ download_model bartowski/google_gemma-3-1b-it-GGUF google_gemma-3-1b-it-Q3_K_L.g
 
 # Gemma 3 4B (FP16 from non-qat repo; quantized from QAT repo)
 echo "--- Gemma 3 4B ---"
-download_model bartowski/google_gemma-3-4b-it-GGUF google_gemma-3-4b-it-f16.gguf gemma-3-4b-f16.gguf
+download_model bartowski/google_gemma-3-4b-it-GGUF google_gemma-3-4b-it-bf16.gguf gemma-3-4b-bf16.gguf
 download_model bartowski/google_gemma-3-4b-it-qat-GGUF google_gemma-3-4b-it-qat-Q8_0.gguf gemma-3-4b-q8_0.gguf
 download_model bartowski/google_gemma-3-4b-it-qat-GGUF google_gemma-3-4b-it-qat-Q4_0.gguf gemma-3-4b-q4_0.gguf
 download_model bartowski/google_gemma-3-4b-it-qat-GGUF google_gemma-3-4b-it-qat-Q3_K_L.gguf gemma-3-4b-q3_k_l.gguf

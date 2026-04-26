@@ -66,7 +66,8 @@ if [ "$HAS_GPU" = "true" ]; then
   echo "CUDA compiler: $(nvcc --version | head -1)"
 
   echo "Installing llama-cpp-python with CUDA (source build, GGML_CUDA=on)..."
-  CMAKE_ARGS="-DGGML_CUDA=on -DCMAKE_CUDA_ARCHITECTURES=native" \
+  # native arch requires CMake 3.24+; Chameleon has 3.22 — use explicit sm_75 (RTX 6000 / Turing)
+  CMAKE_ARGS="-DGGML_CUDA=on -DCMAKE_CUDA_ARCHITECTURES=75" \
     python3 -m pip install llama-cpp-python --force-reinstall --no-cache-dir
 
   # Verify CUDA offload works

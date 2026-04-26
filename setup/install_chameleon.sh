@@ -60,9 +60,12 @@ if [ "$HAS_GPU" = "true" ]; then
   # -------------------------------------------------------------------------
   # GPU node: install llama-cpp-python with CUDA support
   # -------------------------------------------------------------------------
+  # Chameleon CUDA images have nvcc at /usr/local/cuda/bin but not in PATH
+  export PATH="/usr/local/cuda/bin:$PATH"
+  export CUDACXX="/usr/local/cuda/bin/nvcc"
+  echo "CUDA compiler: $(nvcc --version | head -1)"
+
   echo "Installing llama-cpp-python with CUDA (source build, GGML_CUDA=on)..."
-  # Prebuilt wheels are pinned to specific CUDA versions and often miss.
-  # Source build against the node's local nvcc is more reliable.
   CMAKE_ARGS="-DGGML_CUDA=on -DCMAKE_CUDA_ARCHITECTURES=native" \
     python3 -m pip install llama-cpp-python --force-reinstall --no-cache-dir
 
